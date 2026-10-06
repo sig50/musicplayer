@@ -1,0 +1,58 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Build EXE with PyInstaller
+        run: python build_exe.py
+
+      - name: Install NSIS
+        run: choco install nsis -y --no-progress
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" installer.nsi
+          if (-not (Test-Path dist\musicplayer-setup.exe)) { throw "installer not built" }
+
+      - name: Generate checksums
+        shell: pwsh
+        run: |
+          Set-Location dist
+          Get-ChildItem musicplayer.exe, musicplayer-setup.exe | ForEach-Object {
+            $h = (Get-FileHash $_.Name -Algorithm SHA256).Hash.ToLower()
+            "$h  $($_.Name)"
+          } | Out-File -Encoding ascii SHA256SUMS.txt
+          Get-Content SHA256SUMS.txt
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            Windows builds of musicplayer:
+            - `musicplayer.exe` – portable version (no installation needed)
+            - `musicplayer-setup.exe` – Windows installer
+            - `SHA256SUMS.txt` – SHA-256 checksums for verification
+          files: |
+            dist/musicplayer.exe
+            dist/musicplayer-setup.exe
+            dist/SHA256SUMS.txt
