@@ -19,6 +19,21 @@ pip install -r requirements.txt
 python main.py
 ```
 
+## Download pre-built EXE
+Download the latest `musicplayer.exe` (portable) or `musicplayer-setup.exe`
+(installer) from the [Releases page](https://github.com/sig50/musicplayer/releases).
+No Python is required: run the portable EXE directly, or run the installer.
+Verify a download with `SHA256SUMS.txt` (e.g. `certutil -hashfile musicplayer.exe SHA256`).
+
+### Publishing a release (maintainers)
+Pushing a version tag triggers `.github/workflows/build-release.yml`, which builds
+the EXE and installer, then creates a GitHub Release with them, checksums and
+auto-generated release notes attached:
+```
+git tag v1.0.0
+git push origin v1.0.0
+```
+
 ## Building a Windows EXE
 Users of the EXE do not need Python installed.
 
